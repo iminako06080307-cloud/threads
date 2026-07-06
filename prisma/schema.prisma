@@ -1,0 +1,66 @@
+// ダイエット特化 Threads 自動投稿システムのデータモデル (テキスト中心)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 投稿案 (下書き → 承認 → 予約 → 投稿済み のライフサイクル)
+model Post {
+  id       String @id @default(cuid())
+  // 使用したダイエット投稿フォーマット (例: HABITS, NG_FOODS, MEAL_LOG, BEFORE_AFTER)
+  format   String @default("HABITS")
+  // 生成時に使ったお題・テーマ
+  topic    String @default("")
+
+  // メイン投稿の本文 (Threadsは1投稿500字まで)
+  text     String @default("")
+  // 連投(スレッド)チェーン。2件目以降の本文をJSON配列で保持: ["...", "..."]
+  thread   String @default("[]")
+  // 付けるハッシュタグ (スペース区切り。Threadsはタグ1つのみクリック可)
+  hashtags String @default("")
+  // 任意で添える画像URL (テキスト中心なので通常は空)
+  mediaUrl String?
+
+  status      PostStatus @default(DRAFT)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+
+  // Threads側の識別子 (投稿後に格納。メイン投稿のID)
+  threadsPostId String?
+  // 投稿の公開URL (permalink)
+  permalink     String?
+  errorMessage  String?
+
+  logs PublishLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, scheduledAt])
+}
+
+enum PostStatus {
+  DRAFT      // 生成直後・レビュー待ち
+  APPROVED   // 人が承認済み
+  SCHEDULED  // 予約時刻セット済み
+  PUBLISHING // 投稿処理中
+  PUBLISHED  // 投稿完了
+  FAILED     // 投稿失敗
+  REJECTED   // 却下
+}
+
+// 投稿処理のログ (デバッグ・監査用)
+model PublishLog {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  level     String   @default("info") // info | warn | error
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
