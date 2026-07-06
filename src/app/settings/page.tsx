@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 type Status = {
   anthropic: { configured: boolean };
   threads: { configured: boolean; ok?: boolean; username?: string; error?: string };
+  lineCta: { configured: boolean };
 };
 
 export default function SettingsPage() {
@@ -75,6 +76,23 @@ export default function SettingsPage() {
                   : status.threads.configured
                   ? "エラー"
                   : "未設定"}
+              </span>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="post-item">
+              <div>
+                <div className="title">公式LINE誘導 (任意)</div>
+                <div className="post-meta">LINE_CTA_URL</div>
+                <div className="post-meta">
+                  設定すると、生成した投稿の最後にLINE誘導の連投が自動で付きます
+                </div>
+              </div>
+              <span
+                className={`badge ${status.lineCta.configured ? "PUBLISHED" : "DRAFT"}`}
+              >
+                {status.lineCta.configured ? "設定済み" : "未設定"}
               </span>
             </div>
           </div>

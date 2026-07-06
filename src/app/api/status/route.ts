@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkThreadsConnection } from "@/lib/threads";
+import { isLineCtaEnabled } from "@/lib/cta";
 
 // 各種連携の設定状況・接続確認
 export async function GET() {
@@ -14,5 +15,6 @@ export async function GET() {
   return NextResponse.json({
     anthropic: { configured: anthropic },
     threads: { configured: threadsConfigured, ...threads },
+    lineCta: { configured: isLineCtaEnabled() },
   });
 }
