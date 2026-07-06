@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { DIET_SYSTEM_PROMPT, buildGenerationPrompt } from "./prompts/diet";
+import { buildSystemPrompt, buildGenerationPrompt } from "./prompts/diet";
 
 const DEFAULT_MODEL = "claude-sonnet-5";
 
@@ -30,6 +30,7 @@ function extractJson(text: string): string {
 }
 
 export async function generateDietContent(params: {
+  styleId: string;
   formatId: string;
   topic: string;
 }): Promise<GeneratedContent> {
@@ -39,8 +40,16 @@ export async function generateDietContent(params: {
   const message = await client.messages.create({
     model,
     max_tokens: 2000,
-    system: DIET_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: buildGenerationPrompt(params) }],
+    system: buildSystemPrompt(params.styleId),
+    messages: [
+      {
+        role: "user",
+        content: buildGenerationPrompt({
+          formatId: params.formatId,
+          topic: params.topic,
+        }),
+      },
+    ],
   });
 
   const text = message.content

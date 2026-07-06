@@ -11,8 +11,10 @@ datasource db {
 // 投稿案 (下書き → 承認 → 予約 → 投稿済み のライフサイクル)
 model Post {
   id       String @id @default(cuid())
-  // 使用したダイエット投稿フォーマット (例: HABITS, NG_FOODS, MEAL_LOG, BEFORE_AFTER)
-  format   String @default("HABITS")
+  // 発信スタイル/トーン (例: EXPERT=専門家・論破型, PERSONAL=実体験・共感型)
+  style    String @default("EXPERT")
+  // 使用したダイエット投稿フォーマット (例: MYTH_BUSTING, HABITS, EXPERIENCE ...)
+  format   String @default("MYTH_BUSTING")
   // 生成時に使ったお題・テーマ
   topic    String @default("")
 

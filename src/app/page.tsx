@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DIET_FORMATS } from "@/lib/prompts/diet";
+import { DIET_FORMATS, DIET_STYLES } from "@/lib/prompts/diet";
 
 type Post = {
   id: string;
+  style: string;
   format: string;
   topic: string;
   text: string;
@@ -25,6 +26,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function Dashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [styleId, setStyleId] = useState(DIET_STYLES[0].id);
   const [formatId, setFormatId] = useState(DIET_FORMATS[0].id);
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ export default function Dashboard() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formatId, topic }),
+        body: JSON.stringify({ styleId, formatId, topic }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "生成に失敗しました");
@@ -61,6 +63,7 @@ export default function Dashboard() {
   }
 
   const selectedFormat = DIET_FORMATS.find((f) => f.id === formatId);
+  const selectedStyle = DIET_STYLES.find((s) => s.id === styleId);
 
   return (
     <div>
@@ -70,7 +73,25 @@ export default function Dashboard() {
       </p>
 
       <div className="card">
-        <div className="row">
+        <label htmlFor="style">発信スタイル (声)</label>
+        <select
+          id="style"
+          value={styleId}
+          onChange={(e) => setStyleId(e.target.value)}
+        >
+          {DIET_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        {selectedStyle && (
+          <p className="post-meta" style={{ marginTop: 6 }}>
+            {selectedStyle.description}
+          </p>
+        )}
+
+        <div className="row" style={{ marginTop: 4 }}>
           <div>
             <label htmlFor="format">フォーマット</label>
             <select
@@ -87,6 +108,7 @@ export default function Dashboard() {
             {selectedFormat && (
               <p className="post-meta" style={{ marginTop: 6 }}>
                 {selectedFormat.description}
+                {selectedFormat.bestStyle === styleId && " ◎このスタイルと好相性"}
               </p>
             )}
           </div>

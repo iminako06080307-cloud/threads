@@ -2,10 +2,11 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DIET_FORMATS, THREADS_MAX_CHARS } from "@/lib/prompts/diet";
+import { DIET_FORMATS, DIET_STYLES, THREADS_MAX_CHARS } from "@/lib/prompts/diet";
 
 type Post = {
   id: string;
+  style: string;
   format: string;
   topic: string;
   text: string;
@@ -155,6 +156,8 @@ export default function ReviewPage({
 
   const formatLabel =
     DIET_FORMATS.find((f) => f.id === post.format)?.label ?? post.format;
+  const styleLabel =
+    DIET_STYLES.find((s) => s.id === post.style)?.label ?? post.style;
   const editable =
     post.status === "DRAFT" ||
     post.status === "APPROVED" ||
@@ -173,7 +176,10 @@ export default function ReviewPage({
           {post.status}
         </span>
       </h1>
-      {post.topic && <p className="subtitle">お題: {post.topic}</p>}
+      <p className="subtitle">
+        スタイル: {styleLabel}
+        {post.topic ? ` ・ お題: ${post.topic}` : ""}
+      </p>
 
       {post.permalink && (
         <div className="notice ok">

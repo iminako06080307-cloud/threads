@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { generateDietContent } from "@/lib/anthropic";
 
 const schema = z.object({
+  styleId: z.string().min(1).default("EXPERT"),
   formatId: z.string().min(1),
   topic: z.string().default(""),
 });
@@ -18,12 +19,14 @@ export async function POST(req: Request) {
 
   try {
     const content = await generateDietContent({
+      styleId: input.styleId,
       formatId: input.formatId,
       topic: input.topic,
     });
 
     const post = await prisma.post.create({
       data: {
+        style: input.styleId,
         format: input.formatId,
         topic: input.topic,
         text: content.text,
