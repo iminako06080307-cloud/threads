@@ -80,6 +80,19 @@ Threads への自動投稿には Meta の公式 Threads API を使います。
 > - 投稿上限: 24時間あたり250件
 > - アクセストークンは60日で失効するため定期的な更新（refresh）が必要です
 
+### トークン変換を自動化するコマンド
+
+短期トークンから「長期トークン＋ユーザーID」を取得して `.env` 用の値を出力します:
+
+```bash
+npm run threads:setup -- --token=短期アクセストークン --secret=アプリシークレット
+```
+
+- 短期トークン: Threads ユースケース設定の「アクセストークンを生成」で取得
+- アプリシークレット: アプリ設定 → ベーシック → app secret（「表示」）
+
+出力された `THREADS_USER_ID` と `THREADS_ACCESS_TOKEN` を `.env` に貼って再起動してください。
+
 `http://localhost:3000/settings` で接続状態を確認できます。
 
 ## 使い方
