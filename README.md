@@ -116,19 +116,26 @@ Threads への自動投稿には Meta の公式 Threads API を使います。
 「やりたい型」の投稿例があれば、`DIET_FORMATS` に追加するか各 `structure` を編集して
 落とし込めます。
 
-## 公式LINEへの誘導 (任意)
+## 誘導CTA (Instagram / LINE) (任意)
 
-`.env` の `LINE_CTA_URL` にLINEの友だち追加URL (例 `https://lin.ee/xxxx`) を設定すると、
-生成した各投稿の**最後に「公式LINEへ誘導する連投」が自動で追加**されます。
+生成した各投稿の**最後に「別チャネルへ誘導する連投」を自動追加**できます。
+Instagram・LINE は**両方でも片方でも**設定できます (`.env`)。
 
 ```env
+# Instagramへ誘導 (ユーザー名だけでOK)
+IG_USERNAME="mydiet_account"
+
+# 公式LINEへ誘導
 LINE_CTA_URL="https://lin.ee/xxxxxxx"
-# 文面を変えたい場合 ({url} が上のURLに置換されます)
-LINE_CTA_MESSAGE="無理なく続く習慣リストを公式LINEでプレゼント中🎁\n受け取りは👇\n{url}"
+
+# 文面を変えたい場合 ({url} が該当URLに置換されます)
+IG_CTA_MESSAGE="献立はインスタでも発信中📸 フォローは👇\n{url}"
+LINE_CTA_MESSAGE="習慣リストを公式LINEでプレゼント中🎁 受け取りは👇\n{url}"
 ```
 
+- 両方設定すると、Instagram → LINE の順で2連投が付きます。
 - 誘導文は下書きに含まれるので、レビュー画面で自由に編集・削除できます。
-- 未設定なら誘導は付きません。`/settings` で設定状況を確認できます。
+- `/settings` で設定状況を確認できます。
 - 景品表示法・ステマ規制の観点から、誇大な効果訴求や「必ず痩せる」等は避けてください。
 
 ## 注意事項

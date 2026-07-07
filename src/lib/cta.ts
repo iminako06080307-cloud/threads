@@ -1,28 +1,62 @@
 // ============================================================
-// 公式LINE誘導のCTA (Call To Action) 生成
+// 誘導CTA (Call To Action) 生成
 //
-// LINE_CTA_URL が設定されているとき、投稿の最後に付ける
-// 「公式LINEへ誘導する連投」を組み立てる。
+// 投稿の最後に付ける「別チャネルへの誘導」を組み立てる。
+//   - Instagram誘導 … IG_USERNAME もしくは IG_CTA_URL を設定
+//   - 公式LINE誘導  … LINE_CTA_URL を設定
+// どちらも設定すれば両方、片方だけでも可。未設定なら付かない。
 // ============================================================
 
-const DEFAULT_MESSAGE = `＼ここまで読んでくれたあなたへ／
+const DEFAULT_IG_MESSAGE = `＼もっと知りたい人へ／
+毎日の献立や"増やさない"習慣は、インスタでも発信してます📸
+フォローはこちら👇
+{url}`;
+
+const DEFAULT_LINE_MESSAGE = `＼ここまで読んでくれたあなたへ／
 無理なく続ける「増やさない習慣」のまとめを公式LINEでお渡ししてます🎁
 気になる人は受け取ってね👇
 {url}`;
 
-// LINE誘導が有効か
-export function isLineCtaEnabled(): boolean {
-  return !!process.env.LINE_CTA_URL?.trim();
+// テンプレートに URL を差し込む ({url} が無ければ末尾に付ける)
+function applyTemplate(template: string, url: string): string {
+  return template.includes("{url}")
+    ? template.replaceAll("{url}", url)
+    : `${template}\n${url}`;
 }
 
-// 誘導用の連投テキストを返す。無効なら null。
+// Instagram誘導テキスト。無効なら null。
+export function buildInstagramCta(): string | null {
+  const urlEnv = process.env.IG_CTA_URL?.trim();
+  const username = process.env.IG_USERNAME?.trim();
+  const url =
+    urlEnv ||
+    (username
+      ? `https://www.instagram.com/${username.replace(/^@/, "")}`
+      : "");
+  if (!url) return null;
+  const template = process.env.IG_CTA_MESSAGE?.trim() || DEFAULT_IG_MESSAGE;
+  return applyTemplate(template, url);
+}
+
+// LINE誘導テキスト。無効なら null。
 export function buildLineCta(): string | null {
   const url = process.env.LINE_CTA_URL?.trim();
   if (!url) return null;
-  const template = process.env.LINE_CTA_MESSAGE?.trim() || DEFAULT_MESSAGE;
-  // {url} が無ければ末尾に付ける
-  const text = template.includes("{url}")
-    ? template.replaceAll("{url}", url)
-    : `${template}\n${url}`;
-  return text;
+  const template = process.env.LINE_CTA_MESSAGE?.trim() || DEFAULT_LINE_MESSAGE;
+  return applyTemplate(template, url);
+}
+
+// 設定されている誘導CTAをまとめて返す (Instagram → LINE の順)。
+export function buildCtas(): string[] {
+  return [buildInstagramCta(), buildLineCta()].filter(
+    (x): x is string => !!x
+  );
+}
+
+// 各誘導の設定状況
+export function ctaStatus(): { instagram: boolean; line: boolean } {
+  return {
+    instagram: buildInstagramCta() !== null,
+    line: buildLineCta() !== null,
+  };
 }

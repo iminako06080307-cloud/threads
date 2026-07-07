@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateDietContent } from "@/lib/anthropic";
-import { buildLineCta } from "@/lib/cta";
+import { buildCtas } from "@/lib/cta";
 
 const schema = z.object({
   styleId: z.string().min(1).default("EXPERT"),
@@ -25,10 +25,8 @@ export async function POST(req: Request) {
       topic: input.topic,
     });
 
-    // 公式LINE誘導が設定されていれば、連投の最後にCTAを追加
-    const thread = [...content.thread];
-    const lineCta = buildLineCta();
-    if (lineCta) thread.push(lineCta);
+    // Instagram / 公式LINE 誘導が設定されていれば、連投の最後にCTAを追加
+    const thread = [...content.thread, ...buildCtas()];
 
     const post = await prisma.post.create({
       data: {

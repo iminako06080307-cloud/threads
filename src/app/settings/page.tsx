@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 type Status = {
   anthropic: { configured: boolean };
   threads: { configured: boolean; ok?: boolean; username?: string; error?: string };
+  instagramCta: { configured: boolean };
   lineCta: { configured: boolean };
 };
 
@@ -76,6 +77,23 @@ export default function SettingsPage() {
                   : status.threads.configured
                   ? "エラー"
                   : "未設定"}
+              </span>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="post-item">
+              <div>
+                <div className="title">Instagram誘導 (任意)</div>
+                <div className="post-meta">IG_USERNAME または IG_CTA_URL</div>
+                <div className="post-meta">
+                  設定すると、生成した投稿の最後にインスタ誘導の連投が自動で付きます
+                </div>
+              </div>
+              <span
+                className={`badge ${status.instagramCta.configured ? "PUBLISHED" : "DRAFT"}`}
+              >
+                {status.instagramCta.configured ? "設定済み" : "未設定"}
               </span>
             </div>
           </div>
