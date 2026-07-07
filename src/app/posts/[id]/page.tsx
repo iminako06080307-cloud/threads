@@ -38,6 +38,18 @@ export default function ReviewPage({
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(
     null
   );
+  const [copied, setCopied] = useState<string | null>(null);
+
+  // 手動投稿用: テキストをクリップボードにコピー
+  async function copy(key: string, value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(key);
+      setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500);
+    } catch {
+      setMsg({ kind: "err", text: "コピーできませんでした（ブラウザの許可を確認）" });
+    }
+  }
 
   async function load() {
     const res = await fetch(`/api/posts/${id}`);
@@ -196,6 +208,10 @@ export default function ReviewPage({
         <div className="notice err">エラー: {post.errorMessage}</div>
       )}
 
+      <div className="notice warn">
+        📋 手動投稿モード：各投稿の「コピー」を押して、Threadsアプリに貼り付けて投稿できます（メイン投稿→連投の順に返信）。
+      </div>
+
       <div className="card">
         <label>メイン投稿</label>
         <textarea
@@ -205,9 +221,20 @@ export default function ReviewPage({
         />
         <div
           className="post-meta"
-          style={{ color: overLimit ? "var(--danger)" : undefined }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
         >
-          {text.length} / {THREADS_MAX_CHARS} 文字
+          <span style={{ color: overLimit ? "var(--danger)" : undefined }}>
+            {text.length} / {THREADS_MAX_CHARS} 文字
+          </span>
+          <button
+            className="secondary"
+            style={{ padding: "4px 12px", fontSize: 12 }}
+            onClick={() =>
+              copy("main", hashtags.trim() ? `${text}\n\n${hashtags}` : text)
+            }
+          >
+            {copied === "main" ? "✓ コピーしました" : "メイン投稿をコピー"}
+          </button>
         </div>
 
         <label style={{ marginTop: 16 }}>連投 (スレッド)</label>
@@ -226,21 +253,30 @@ export default function ReviewPage({
               }}
               style={{ minHeight: 80 }}
             />
-            <div className="post-meta" style={{ display: "flex", justifyContent: "space-between" }}>
+            <div className="post-meta" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
               <span
                 style={{ color: t.length > THREADS_MAX_CHARS ? "var(--danger)" : undefined }}
               >
                 {i + 2}件目 · {t.length} / {THREADS_MAX_CHARS} 文字
               </span>
-              {editable && (
+              <span style={{ display: "flex", gap: 8 }}>
                 <button
-                  className="danger"
+                  className="secondary"
                   style={{ padding: "2px 10px", fontSize: 12 }}
-                  onClick={() => setThread(thread.filter((_, j) => j !== i))}
+                  onClick={() => copy(`t${i}`, t)}
                 >
-                  削除
+                  {copied === `t${i}` ? "✓ コピー済" : "コピー"}
                 </button>
-              )}
+                {editable && (
+                  <button
+                    className="danger"
+                    style={{ padding: "2px 10px", fontSize: 12 }}
+                    onClick={() => setThread(thread.filter((_, j) => j !== i))}
+                  >
+                    削除
+                  </button>
+                )}
+              </span>
             </div>
           </div>
         ))}
