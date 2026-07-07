@@ -12,6 +12,7 @@ type Post = {
   text: string;
   thread: string;
   hashtags: string;
+  mediaUrl: string | null;
   status: string;
   scheduledAt: string | null;
   publishedAt: string | null;
@@ -31,6 +32,7 @@ export default function ReviewPage({
   const [text, setText] = useState("");
   const [thread, setThread] = useState<string[]>([]);
   const [hashtags, setHashtags] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(
@@ -44,6 +46,7 @@ export default function ReviewPage({
     setPost(p);
     setText(p.text);
     setHashtags(p.hashtags);
+    setMediaUrl(p.mediaUrl ?? "");
     try {
       setThread(JSON.parse(p.thread));
     } catch {
@@ -62,7 +65,7 @@ export default function ReviewPage({
       const res = await fetch(`/api/posts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, thread, hashtags }),
+        body: JSON.stringify({ text, thread, hashtags, mediaUrl: mediaUrl || null }),
       });
       if (!res.ok) throw new Error("保存に失敗しました");
       setMsg({ kind: "ok", text: "保存しました" });
@@ -257,6 +260,28 @@ export default function ReviewPage({
           disabled={!editable}
           onChange={(e) => setHashtags(e.target.value)}
         />
+
+        <label style={{ marginTop: 16 }}>画像URL（任意・ビフォアフ等）</label>
+        <input
+          value={mediaUrl}
+          disabled={!editable}
+          placeholder="https://... （公開画像URL）"
+          onChange={(e) => setMediaUrl(e.target.value)}
+        />
+        {mediaUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={mediaUrl}
+            alt="添付画像プレビュー"
+            style={{
+              maxWidth: "100%",
+              marginTop: 10,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+            }}
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        )}
       </div>
 
       {msg && <div className={`notice ${msg.kind}`}>{msg.text}</div>}

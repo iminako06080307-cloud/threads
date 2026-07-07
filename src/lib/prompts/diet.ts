@@ -144,6 +144,17 @@ export const DIET_FORMATS: DietFormat[] = [
     threadCount: 5,
     bestStyle: "HABITS_SLIM",
   },
+  {
+    id: "TESTIMONIAL",
+    label: "お客様の声・実績紹介",
+    description: "実際のサポート利用者からの本物の声を、盛らず・敬意を持って紹介する型 (要・本人同意)",
+    structure: [
+      "メイン投稿: どんな方が、どんな悩みから、どう変化したかを、貼られた本物の声に忠実に紹介する。数字や結果を誇張しない。",
+      "連投: サポートで実際に取り組んだこと・本人のコメントを、事実を変えずに読みやすく整える。医学的・断定的な効果表現は使わない。",
+      "最後の連投: 同じ悩みの人への呼びかけ + CTA。",
+    ].join("\n"),
+    threadCount: 3,
+  },
 ];
 
 export function getFormat(id: string): DietFormat {
@@ -176,21 +187,49 @@ export function buildSystemPrompt(styleId: string): string {
 // 後方互換: 既定スタイルのシステムプロンプト
 export const DIET_SYSTEM_PROMPT = buildSystemPrompt("EXPERT");
 
+// お客様の声(体験談)に必ず添える打消し表示 (景品表示法)
+export const TESTIMONIAL_DISCLAIMER =
+  "※ご本人の許可を得て掲載しています。個人の感想であり、効果には個人差があります。";
+
 // ---------- ユーザープロンプト ----------
 export function buildGenerationPrompt(params: {
   formatId: string;
   topic: string;
+  // お客様の声フォーマット用: 実際に本人からもらった本物のメッセージ等
+  sourceMaterial?: string;
 }): string {
   const format = getFormat(params.formatId);
   const topicLine = params.topic.trim()
     ? `お題・テーマ: ${params.topic.trim()}`
     : "お題: おまかせ (40〜60代女性に刺さる、このフォーマットの鉄板テーマを自分で選ぶ)";
 
+  // お客様の声フォーマットで、本物の素材が貼られている場合の追加指示
+  const source = params.sourceMaterial?.trim();
+  const sourceBlock =
+    format.id === "TESTIMONIAL" && source
+      ? `
+
+【素材: 本物のお客様の声 (ここに忠実に。事実を変えない・盛らない・新しい結果を創作しない)】
+"""
+${source}
+"""
+重要:
+- この素材に書かれていない結果・数字・効果を絶対に足さない。
+- 医学的・断定的な効果表現 (治る/必ず痩せる 等) にしない。あくまで「サポートを受けた方の感想・変化」として書く。
+- 本人が特定されすぎる個人情報 (フルネーム・住所等) は書かない。
+- 末尾の打消し表示はシステム側で自動付与するので、本文には書かなくてよい。`
+      : format.id === "TESTIMONIAL"
+      ? `
+
+【注意】お客様の声フォーマットですが素材(本物の声)が渡されていません。
+架空の体験談を創作せず、「実際の声を紹介する枠組み」だけを作り、具体的な結果はプレースホルダ的な表現にしてください。`
+      : "";
+
   return `${topicLine}
 フォーマット: ${format.label} — ${format.description}
 
 このフォーマットの構成ルール:
-${format.structure}
+${format.structure}${sourceBlock}
 
 上記と、システムで指定した「声(スタイル)」・トーン・誠実さのルールに沿って、
 メイン投稿1件 + 連投${format.threadCount - 1}件程度のスレッドを作ってください。

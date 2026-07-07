@@ -29,8 +29,12 @@ export default function Dashboard() {
   const [styleId, setStyleId] = useState(DIET_STYLES[0].id);
   const [formatId, setFormatId] = useState(DIET_FORMATS[0].id);
   const [topic, setTopic] = useState("");
+  const [sourceMaterial, setSourceMaterial] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const isTestimonial = formatId === "TESTIMONIAL";
 
   async function load() {
     const res = await fetch("/api/posts");
@@ -49,11 +53,13 @@ export default function Dashboard() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ styleId, formatId, topic }),
+        body: JSON.stringify({ styleId, formatId, topic, sourceMaterial, mediaUrl }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "生成に失敗しました");
       setTopic("");
+      setSourceMaterial("");
+      setMediaUrl("");
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "エラー");
@@ -125,6 +131,36 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
+
+        {isTestimonial && (
+          <>
+            <label htmlFor="source" style={{ marginTop: 4 }}>
+              お客様の声（本物のメッセージを貼る）
+            </label>
+            <textarea
+              id="source"
+              value={sourceMaterial}
+              placeholder="本人からもらったお礼メッセージや変化の内容をそのまま貼ってください。&#10;AIはこの内容に忠実に整えます（結果は創作しません）。"
+              onChange={(e) => setSourceMaterial(e.target.value)}
+            />
+            <div className="notice warn" style={{ marginTop: 8 }}>
+              ⚠️ 掲載には<strong>本人の同意</strong>が必要です。末尾に「※個人の感想です。効果には個人差があります」を自動で付けます。誇大・医学的な効果表現は避けてください。
+            </div>
+          </>
+        )}
+
+        <label htmlFor="media" style={{ marginTop: 4 }}>
+          画像URL（任意・ビフォアフ等）
+        </label>
+        <input
+          id="media"
+          value={mediaUrl}
+          placeholder="https://... （Threadsが取得できる公開画像URL）"
+          onChange={(e) => setMediaUrl(e.target.value)}
+        />
+        <p className="post-meta" style={{ marginTop: 6 }}>
+          画像を付けると画像付き投稿になります。ビフォアフ写真は本人同意＋加工なしで。
+        </p>
 
         {error && <div className="notice err">{error}</div>}
 

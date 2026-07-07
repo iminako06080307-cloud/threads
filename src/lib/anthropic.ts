@@ -33,6 +33,7 @@ export async function generateDietContent(params: {
   styleId: string;
   formatId: string;
   topic: string;
+  sourceMaterial?: string;
 }): Promise<GeneratedContent> {
   const client = getClient();
   const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
@@ -47,6 +48,7 @@ export async function generateDietContent(params: {
         content: buildGenerationPrompt({
           formatId: params.formatId,
           topic: params.topic,
+          sourceMaterial: params.sourceMaterial,
         }),
       },
     ],
