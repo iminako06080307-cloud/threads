@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DIET_FORMATS, DIET_STYLES } from "@/lib/prompts/diet";
+import {
+  DIET_FORMATS,
+  DIET_STYLES,
+  DEFAULT_STYLE_ID,
+  DEFAULT_FORMAT_ID,
+} from "@/lib/prompts/diet";
 
 type Post = {
   id: string;
@@ -26,8 +31,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function Dashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [styleId, setStyleId] = useState(DIET_STYLES[0].id);
-  const [formatId, setFormatId] = useState(DIET_FORMATS[0].id);
+  const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID);
+  const [formatId, setFormatId] = useState(DEFAULT_FORMAT_ID);
   const [topic, setTopic] = useState("");
   const [sourceMaterial, setSourceMaterial] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
