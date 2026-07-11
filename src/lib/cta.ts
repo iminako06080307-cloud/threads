@@ -40,6 +40,18 @@ export function buildInstagramCta(): string | null {
   return applyTemplate(template, url);
 }
 
+// LINEの友だち追加URLだけを返す。無効なら null。
+export function getLineUrl(): string | null {
+  return process.env.LINE_CTA_URL?.trim() || null;
+}
+
+// 特典配布投稿用: 「▼受け取りはこちら▼ + URL」だけのシンプルなCTA。
+export function buildLeadMagnetCta(): string | null {
+  const url = getLineUrl();
+  if (!url) return null;
+  return `▼受け取りはこちら▼\n${url}`;
+}
+
 // LINE誘導テキスト。無効なら null。
 export function buildLineCta(): string | null {
   const url = process.env.LINE_CTA_URL?.trim();

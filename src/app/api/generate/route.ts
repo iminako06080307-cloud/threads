@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateDietContent } from "@/lib/anthropic";
-import { buildCtas } from "@/lib/cta";
+import { buildCtas, buildLeadMagnetCta } from "@/lib/cta";
 import { TESTIMONIAL_DISCLAIMER } from "@/lib/prompts/diet";
 
 const schema = z.object({
@@ -31,12 +31,18 @@ export async function POST(req: Request) {
       sourceMaterial: input.sourceMaterial,
     });
 
-    // 連投を組み立て: 本文の後ろに [免責文(お客様の声のみ)] → [誘導CTA] の順で足す
+    // 連投を組み立て
     const thread = [...content.thread];
     if (input.formatId === "TESTIMONIAL") {
       thread.push(TESTIMONIAL_DISCLAIMER);
     }
-    thread.push(...buildCtas());
+    if (input.formatId === "LEAD_MAGNET") {
+      // 特典配布投稿は本文が既に特典紹介なので、受け取りURLだけ足す(誘導CTAの重複を避ける)
+      const cta = buildLeadMagnetCta();
+      if (cta) thread.push(cta);
+    } else {
+      thread.push(...buildCtas());
+    }
 
     const post = await prisma.post.create({
       data: {
