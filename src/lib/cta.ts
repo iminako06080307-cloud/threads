@@ -57,12 +57,18 @@ export function getSeminarUrl(): string | null {
   return process.env.SEMINAR_CTA_URL?.trim() || getLineUrl();
 }
 
-// 勉強会募集投稿用: 「▼参加はこちら▼ + URL」。SEMINAR_CTA_MESSAGE で文面変更可。
+// 勉強会募集投稿用の既定文面(募集開始前の"予告"＋LINE先行案内)
+const DEFAULT_SEMINAR_MESSAGE = `＼もうすぐ募集スタート／
+無料勉強会の先行案内は、公式LINEでお届けします📩
+席に限りがあるので、気になる方は今のうちに登録を👇
+{url}`;
+
+// 勉強会募集投稿用のCTA。SEMINAR_CTA_MESSAGE で文面変更可。
 export function buildSeminarCta(): string | null {
   const url = getSeminarUrl();
   if (!url) return null;
-  const template = process.env.SEMINAR_CTA_MESSAGE?.trim();
-  return template ? applyTemplate(template, url) : `▼参加はこちら▼\n${url}`;
+  const template = process.env.SEMINAR_CTA_MESSAGE?.trim() || DEFAULT_SEMINAR_MESSAGE;
+  return applyTemplate(template, url);
 }
 
 // LINE誘導テキスト。無効なら null。
