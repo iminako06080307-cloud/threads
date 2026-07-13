@@ -6,6 +6,7 @@ import {
   DIET_STYLES,
   DEFAULT_STYLE_ID,
   DEFAULT_FORMAT_ID,
+  SOURCE_FORMATS,
 } from "@/lib/prompts/diet";
 
 type Post = {
@@ -39,7 +40,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const isTestimonial = formatId === "TESTIMONIAL";
+  const needsSource = SOURCE_FORMATS.includes(formatId);
 
   async function load() {
     const res = await fetch("/api/posts");
@@ -137,19 +138,19 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {isTestimonial && (
+        {needsSource && (
           <>
             <label htmlFor="source" style={{ marginTop: 4 }}>
-              お客様の声（本物のメッセージを貼る）
+              実際の素材（お客様の声／サポート生さんの取り組みを貼る）
             </label>
             <textarea
               id="source"
               value={sourceMaterial}
-              placeholder="本人からもらったお礼メッセージや変化の内容をそのまま貼ってください。&#10;AIはこの内容に忠実に整えます（結果は創作しません）。"
+              placeholder="本人からもらったお礼メッセージや、実際に取り組んだ内容・変化をそのまま貼ってください。&#10;AIはこの内容に忠実に整えます（結果や数字は創作しません）。"
               onChange={(e) => setSourceMaterial(e.target.value)}
             />
             <div className="notice warn" style={{ marginTop: 8 }}>
-              ⚠️ 掲載には<strong>本人の同意</strong>が必要です。末尾に「※個人の感想です。効果には個人差があります」を自動で付けます。誇大・医学的な効果表現は避けてください。
+              ⚠️ 掲載には<strong>本人の同意</strong>が必要です（写真・文章とも）。末尾に「※個人の感想です。効果には個人差があります」を自動で付けます。誇大・医学的な効果表現は避けてください。勉強会の「席に限りがある」等は事実の範囲で書いてください。
             </div>
           </>
         )}

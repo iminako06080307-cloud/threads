@@ -52,6 +52,19 @@ export function buildLeadMagnetCta(): string | null {
   return `▼受け取りはこちら▼\n${url}`;
 }
 
+// 勉強会・募集の参加先URL (SEMINAR_CTA_URL 優先、無ければLINEにフォールバック)。
+export function getSeminarUrl(): string | null {
+  return process.env.SEMINAR_CTA_URL?.trim() || getLineUrl();
+}
+
+// 勉強会募集投稿用: 「▼参加はこちら▼ + URL」。SEMINAR_CTA_MESSAGE で文面変更可。
+export function buildSeminarCta(): string | null {
+  const url = getSeminarUrl();
+  if (!url) return null;
+  const template = process.env.SEMINAR_CTA_MESSAGE?.trim();
+  return template ? applyTemplate(template, url) : `▼参加はこちら▼\n${url}`;
+}
+
 // LINE誘導テキスト。無効なら null。
 export function buildLineCta(): string | null {
   const url = process.env.LINE_CTA_URL?.trim();

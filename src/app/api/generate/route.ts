@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateDietContent } from "@/lib/anthropic";
-import { buildCtas, buildLeadMagnetCta } from "@/lib/cta";
+import { buildCtas, buildLeadMagnetCta, buildSeminarCta } from "@/lib/cta";
 import { TESTIMONIAL_DISCLAIMER } from "@/lib/prompts/diet";
 
 const schema = z.object({
@@ -31,12 +31,17 @@ export async function POST(req: Request) {
       sourceMaterial: input.sourceMaterial,
     });
 
-    // 連投を組み立て
+    // 連投を組み立て (フォーマットごとに末尾の免責・CTAを出し分け)
     const thread = [...content.thread];
     if (input.formatId === "TESTIMONIAL") {
       thread.push(TESTIMONIAL_DISCLAIMER);
-    }
-    if (input.formatId === "LEAD_MAGNET") {
+      thread.push(...buildCtas());
+    } else if (input.formatId === "SEMINAR") {
+      // ビフォアフを使うので免責を付与し、参加先URLを足す
+      thread.push(TESTIMONIAL_DISCLAIMER);
+      const cta = buildSeminarCta();
+      if (cta) thread.push(cta);
+    } else if (input.formatId === "LEAD_MAGNET") {
       // 特典配布投稿は本文が既に特典紹介なので、受け取りURLだけ足す(誘導CTAの重複を避ける)
       const cta = buildLeadMagnetCta();
       if (cta) thread.push(cta);
