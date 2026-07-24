@@ -37,8 +37,26 @@ export default function Dashboard() {
   const [topic, setTopic] = useState("");
   const [sourceMaterial, setSourceMaterial] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  async function uploadFile(file: File) {
+    setUploading(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "アップロードに失敗しました");
+      setMediaUrl(data.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "アップロードエラー");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const needsSource = SOURCE_FORMATS.includes(formatId);
 
@@ -155,18 +173,50 @@ export default function Dashboard() {
           </>
         )}
 
-        <label htmlFor="media" style={{ marginTop: 4 }}>
-          画像URL（任意・ビフォアフ等）
+        <label htmlFor="mediaFile" style={{ marginTop: 4 }}>
+          画像（任意・ビフォアフ等）
         </label>
         <input
-          id="media"
-          value={mediaUrl}
-          placeholder="https://... （Threadsが取得できる公開画像URL）"
-          onChange={(e) => setMediaUrl(e.target.value)}
+          id="mediaFile"
+          type="file"
+          accept="image/*"
+          disabled={uploading}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) uploadFile(f);
+          }}
         />
+        {uploading && (
+          <p className="post-meta" style={{ marginTop: 6 }}>
+            <span className="spin">⏳</span> アップロード中…
+          </p>
+        )}
+        {mediaUrl && !uploading && (
+          <div style={{ marginTop: 8 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={mediaUrl}
+              alt="プレビュー"
+              style={{ maxWidth: 180, borderRadius: 8, border: "1px solid var(--border)" }}
+            />
+            <button
+              className="danger"
+              style={{ display: "block", marginTop: 6, padding: "2px 10px", fontSize: 12 }}
+              onClick={() => setMediaUrl("")}
+            >
+              画像を外す
+            </button>
+          </div>
+        )}
         <p className="post-meta" style={{ marginTop: 6 }}>
           画像を付けると画像付き投稿になります。ビフォアフ写真は本人同意＋加工なしで。
+          URLを直接使いたい場合は下に貼ってもOK。
         </p>
+        <input
+          value={mediaUrl}
+          placeholder="または画像URLを直接貼る（https://...）"
+          onChange={(e) => setMediaUrl(e.target.value)}
+        />
 
         {error && <div className="notice err">{error}</div>}
 

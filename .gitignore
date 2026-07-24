@@ -21,6 +21,9 @@ next-env.d.ts
 prisma/dev.db
 prisma/dev.db-journal
 
+# uploaded images (user content)
+/data/uploads
+
 # misc
 .DS_Store
 *.pem

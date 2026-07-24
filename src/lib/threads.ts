@@ -104,6 +104,20 @@ async function createAndPublish(
   return published.id as string;
 }
 
+// アップロード画像(/uploads/..)を Threads が取得できる公開URLに変換する。
+// 既に http(s) の絶対URLならそのまま返す。
+function resolvePublicUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  const base = process.env.PUBLIC_BASE_URL?.trim();
+  if (!base) {
+    throw new Error(
+      "アップロードした画像を自動投稿するには PUBLIC_BASE_URL (アプリの公開URL) の設定が必要です。" +
+        "手動投稿の場合は、画像をThreadsアプリで直接添付してください。"
+    );
+  }
+  return `${base.replace(/\/$/, "")}${url}`;
+}
+
 export type ThreadsPublishInput = {
   text: string; // メイン投稿本文
   thread?: string[]; // 連投 (2件目以降)
@@ -130,10 +144,10 @@ export async function publishToThreads(
     throw new Error("投稿本文が空です。");
   }
 
-  // メイン投稿
+  // メイン投稿 (アップロード画像は公開URLに解決してから渡す)
   const mainId = await createAndPublish(cfg, {
     text: mainText,
-    mediaUrl: input.mediaUrl,
+    mediaUrl: input.mediaUrl ? resolvePublicUrl(input.mediaUrl) : undefined,
   });
 
   // 連投 (直前の投稿へのリプライとして連鎖)

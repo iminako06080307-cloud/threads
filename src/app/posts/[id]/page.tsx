@@ -39,6 +39,24 @@ export default function ReviewPage({
     null
   );
   const [copied, setCopied] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadFile(file: File) {
+    setUploading(true);
+    setMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "アップロードに失敗しました");
+      setMediaUrl(data.url);
+    } catch (e) {
+      setMsg({ kind: "err", text: e instanceof Error ? e.message : "アップロードエラー" });
+    } finally {
+      setUploading(false);
+    }
+  }
 
   // 手動投稿用: テキストをクリップボードにコピー
   async function copy(key: string, value: string) {
@@ -297,12 +315,29 @@ export default function ReviewPage({
           onChange={(e) => setHashtags(e.target.value)}
         />
 
-        <label style={{ marginTop: 16 }}>画像URL（任意・ビフォアフ等）</label>
+        <label style={{ marginTop: 16 }}>画像（任意・ビフォアフ等）</label>
+        {editable && (
+          <input
+            type="file"
+            accept="image/*"
+            disabled={uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadFile(f);
+            }}
+          />
+        )}
+        {uploading && (
+          <p className="post-meta">
+            <span className="spin">⏳</span> アップロード中…
+          </p>
+        )}
         <input
           value={mediaUrl}
           disabled={!editable}
-          placeholder="https://... （公開画像URL）"
+          placeholder="または画像URLを直接貼る（https://...）"
           onChange={(e) => setMediaUrl(e.target.value)}
+          style={{ marginTop: 8 }}
         />
         {mediaUrl && (
           // eslint-disable-next-line @next/next/no-img-element

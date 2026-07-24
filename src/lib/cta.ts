@@ -57,10 +57,10 @@ export function getSeminarUrl(): string | null {
   return process.env.SEMINAR_CTA_URL?.trim() || getLineUrl();
 }
 
-// 勉強会募集投稿用の既定文面(募集開始前の"予告"＋LINE先行案内)
-const DEFAULT_SEMINAR_MESSAGE = `＼もうすぐ募集スタート／
-無料勉強会の先行案内は、公式LINEでお届けします📩
-席に限りがあるので、気になる方は今のうちに登録を👇
+// 勉強会募集投稿用の既定文面(日程は本文側で述べるため、ここは時期に依存しない案内)
+const DEFAULT_SEMINAR_MESSAGE = `＼無料勉強会の詳細・参加はこちら／
+公式LINEからご案内しています📩
+席に限りがあるので、気になる方はお早めに👇
 {url}`;
 
 // 勉強会募集投稿用のCTA。SEMINAR_CTA_MESSAGE で文面変更可。
