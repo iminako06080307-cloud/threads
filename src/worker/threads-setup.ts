@@ -22,38 +22,43 @@ async function main() {
   const shortToken = getArg("token") || process.env.THREADS_SHORT_TOKEN;
   const secret = getArg("secret") || process.env.THREADS_APP_SECRET;
 
-  if (!shortToken || !secret) {
+  if (!shortToken) {
     console.error(
       [
         "❌ 引数が足りません。",
         "",
-        "使い方:",
-        "  npm run threads:setup -- --token=短期トークン --secret=アプリシークレット",
-        "",
-        "・短期トークン: Metaの Threads ユースケース設定の「アクセストークンを生成」で取得",
-        "・アプリシークレット: アプリ設定 → ベーシック → app secret（「表示」を押す）",
+        "使い方(どちらか):",
+        "  A) 長期トークンを直接もらった場合(「ユーザートークン生成ツール」):",
+        "     npm run threads:setup -- --token=長期トークン",
+        "  B) 短期トークン+シークレットから変換する場合:",
+        "     npm run threads:setup -- --token=短期トークン --secret=アプリシークレット",
       ].join("\n")
     );
     process.exit(1);
   }
 
-  // 1. 長期トークンへ変換
-  console.log("⏳ 長期トークンへ変換中...");
-  const exUrl = new URL(`${API}/access_token`);
-  exUrl.searchParams.set("grant_type", "th_exchange_token");
-  exUrl.searchParams.set("client_secret", secret);
-  exUrl.searchParams.set("access_token", shortToken);
+  let longToken = shortToken;
+  let expiresDays: number | string = "?";
 
-  const exRes = await fetch(exUrl);
-  const exJson = await exRes.json();
-  if (!exRes.ok || exJson.error) {
-    console.error("❌ 長期トークンへの変換に失敗:", exJson.error?.message ?? exJson);
-    process.exit(1);
+  // secret が渡された場合のみ、短期→長期トークンへ変換する
+  if (secret) {
+    console.log("⏳ 長期トークンへ変換中...");
+    const exUrl = new URL(`${API}/access_token`);
+    exUrl.searchParams.set("grant_type", "th_exchange_token");
+    exUrl.searchParams.set("client_secret", secret);
+    exUrl.searchParams.set("access_token", shortToken);
+
+    const exRes = await fetch(exUrl);
+    const exJson = await exRes.json();
+    if (!exRes.ok || exJson.error) {
+      console.error("❌ 長期トークンへの変換に失敗:", exJson.error?.message ?? exJson);
+      process.exit(1);
+    }
+    longToken = exJson.access_token;
+    expiresDays = exJson.expires_in ? Math.round(exJson.expires_in / 86400) : "?";
+  } else {
+    console.log("ℹ️ シークレット未指定のため、渡されたトークンを長期トークンとして扱います。");
   }
-  const longToken: string = exJson.access_token;
-  const expiresDays = exJson.expires_in
-    ? Math.round(exJson.expires_in / 86400)
-    : "?";
 
   // 2. ユーザーID取得
   console.log("⏳ ユーザー情報を取得中...");
