@@ -62,6 +62,62 @@ async function threadsGet(
   return json;
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Threadsで一時的に起きうる（少し待てば直る）エラーかどうか
+function isTransient(msg: string): boolean {
+  return /does not exist|requested resource|not available|Media ID|try again|temporarily/i.test(
+    msg
+  );
+}
+
+// 一時エラーの間は待って再試行する
+async function retryTransient<T>(
+  fn: () => Promise<T>,
+  attempts = 5,
+  delayMs = 2500
+): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!isTransient(msg) || i === attempts - 1) throw e;
+      await sleep(delayMs);
+    }
+  }
+  throw lastErr;
+}
+
+// コンテナが公開可能(FINISHED)になるまで待つ
+async function waitForContainerReady(
+  cfg: ThreadsConfig,
+  creationId: string,
+  maxAttempts: number
+): Promise<void> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const res = await threadsGet(
+        creationId,
+        { fields: "status" },
+        cfg.accessToken
+      );
+      if (res.status === "FINISHED") return;
+      if (res.status === "ERROR" || res.status === "EXPIRED") {
+        throw new Error(`メディア処理に失敗しました (${res.status})`);
+      }
+    } catch (e) {
+      // 反映前は取得自体が一時エラーになることがあるので待って再試行
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!isTransient(msg)) throw e;
+    }
+    await sleep(2000);
+  }
+  // タイムアウトしても公開自体は試す(FINISHEDが取れなくても公開できる場合がある)
+}
+
 // 1件のThreads投稿を作成→公開し、そのメディアIDを返す。
 async function createAndPublish(
   cfg: ThreadsConfig,
@@ -82,24 +138,22 @@ async function createAndPublish(
   }
   if (params.replyToId) containerParams.reply_to_id = params.replyToId;
 
-  // 1. コンテナ作成
-  const created = await threadsPost(
-    `${cfg.userId}/threads`,
-    containerParams,
-    cfg.accessToken
+  // 1. コンテナ作成 (連投で前の投稿が未反映のことがあるので一時エラーは再試行)
+  const created = await retryTransient(() =>
+    threadsPost(`${cfg.userId}/threads`, containerParams, cfg.accessToken)
   );
   const creationId = created.id as string;
 
-  // 画像は処理に少し時間がかかるため、公開前に短く待つ (推奨)
-  if (params.mediaUrl) {
-    await new Promise((r) => setTimeout(r, 3000));
-  }
+  // 2. 公開可能になるまで待つ (画像は長め)
+  await waitForContainerReady(cfg, creationId, params.mediaUrl ? 30 : 10);
 
-  // 2. 公開
-  const published = await threadsPost(
-    `${cfg.userId}/threads_publish`,
-    { creation_id: creationId },
-    cfg.accessToken
+  // 3. 公開 (一時エラーは待って再試行)
+  const published = await retryTransient(() =>
+    threadsPost(
+      `${cfg.userId}/threads_publish`,
+      { creation_id: creationId },
+      cfg.accessToken
+    )
   );
   return published.id as string;
 }
@@ -154,6 +208,8 @@ export async function publishToThreads(
   let previousId = mainId;
   for (const reply of input.thread ?? []) {
     if (!reply.trim()) continue;
+    // 直前の投稿が反映されるまで少し待つ (連投の安定化)
+    await sleep(1500);
     previousId = await createAndPublish(cfg, {
       text: reply,
       replyToId: previousId,
