@@ -159,14 +159,12 @@ export default function ReviewPage({
     setMsg(null);
     try {
       await save();
-      // 承認されていなければ先に承認する
-      if (post && post.status === "DRAFT") {
-        await fetch(`/api/posts/${id}/approve`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "approve" }),
-        });
-      }
+      // 投稿前に必ず承認済みにする(下書き・失敗・却下からの再投稿にも対応)
+      await fetch(`/api/posts/${id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve" }),
+      });
       const res = await fetch(`/api/posts/${id}/publish`, { method: "POST" });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "投稿に失敗しました");
