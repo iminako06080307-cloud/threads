@@ -225,7 +225,7 @@ export default function ReviewPage({
       )}
 
       <div className="notice warn">
-        📋 手動投稿モード：各投稿の「コピー」を押して、Threadsアプリに貼り付けて投稿できます（メイン投稿→連投の順に返信）。
+        📋 各投稿の「コピー」で手動投稿もできます（Threadsアプリに貼り付け）。Threads接続済みなら、下の「今すぐ投稿」で自動投稿もOKです。
       </div>
 
       <div className="card">
