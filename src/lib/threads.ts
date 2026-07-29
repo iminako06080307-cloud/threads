@@ -91,6 +91,25 @@ async function retryTransient<T>(
   throw lastErr;
 }
 
+// 公開済みの投稿が実際に取得できる(=返信先として使える)まで待つ
+async function waitForPostExists(
+  cfg: ThreadsConfig,
+  postId: string,
+  maxAttempts = 8
+): Promise<void> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      await threadsGet(postId, { fields: "id" }, cfg.accessToken);
+      return; // 取得できた = 存在する
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!isTransient(msg)) throw e;
+    }
+    await sleep(2500);
+  }
+  // タイムアウトしても次に進む(取得できなくても投稿は生きている場合がある)
+}
+
 // コンテナが公開可能(FINISHED)になるまで待つ
 async function waitForContainerReady(
   cfg: ThreadsConfig,
@@ -203,17 +222,21 @@ export async function publishToThreads(
     text: mainText,
     mediaUrl: input.mediaUrl ? resolvePublicUrl(input.mediaUrl) : undefined,
   });
+  // 返信先として使えるようになるまで待つ
+  await waitForPostExists(cfg, mainId);
 
   // 連投 (直前の投稿へのリプライとして連鎖)
   let previousId = mainId;
   for (const reply of input.thread ?? []) {
     if (!reply.trim()) continue;
-    // 直前の投稿が反映されるまで少し待つ (連投の安定化)
-    await sleep(1500);
+    // Threadsの反映待ち + レート制限に配慮して間隔をあける
+    await sleep(4000);
     previousId = await createAndPublish(cfg, {
       text: reply,
       replyToId: previousId,
     });
+    // 次の返信先になるので、確実に存在するまで待つ
+    await waitForPostExists(cfg, previousId);
   }
 
   // permalink 取得 (失敗しても投稿は成功しているので握りつぶす)
